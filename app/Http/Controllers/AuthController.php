@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
-
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,70 +13,42 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    private $authService;
 
-    public function getAbilities()
+    public function __construct(AuthService $authService)
     {
-        $abilities = ['Manage Posts' => 'manage-posts', 'Manage Comments' => 'manage-comments', 'Manage Users' => 'manage-users'];
-        return response()->json(['abilities' => $abilities], 200);
+        $this->authService = $authService;
     }
-    
-    public function login(Request $request)
+
+    public function login(LoginRequest $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ]);
+        $token = $this->authService->login($request);
 
-
-
-        if (!Auth::attempt($validated)) {
+        if (!$token) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
-
-        /** @var User $user */
-        $user = Auth::user();
-
-        $token = $user->createToken('ACCESS_TOKEN' . $user->id);
 
         return response()->json(['message' => 'Welcome Back!', 'token' => $token->plainTextToken], 200);
     }
 
     public function logout(Request $request)
     {
-        $user = $request->user();
+        $this->authService->logout($request);
 
-        $user->tokens()->delete();
         return response()->json(['message' => 'Logged out successfully.'], 200);
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email',
-            'password' => ['confirmed', Password::min(8)->letters()],
-        ]);
+        $data = $this->authService->register($request);
 
-
-        $data['password'] = bcrypt($data['password']);
-        // $abilities = [];
-        if ($request->isAdmin) {
-            $data['isAdmin'] = true;
-            // if (!$request->abilities) {
-            //     $abilities = ['manage-posts', 'manage-comments', 'manage-users'];
-            // } else {
-            //     $abilities = $request->abilities;
-            // }
+        if (!$data) {
+            return response()->json(['message' => 'Failed to register user.', 500]);
         }
 
-        $user = DB::transaction(function () use ($data) {
-            return User::create($data);
-        });
+        $token = $data['token'];
 
-        Auth::login($user);
-
-
-        $token = $user->createToken('ACCESS_TOKEN' . $user->id);
+        $user = $data['user'];
 
         return response()->json(['message' => 'Welcome!', 'token' => $token->plainTextToken, 'user' => $user], 200);
     }

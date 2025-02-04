@@ -42,10 +42,6 @@ class Draft extends Model
         return isset($this->attributes['body']) && $this->attributes['body'] ? ucfirst($this->attributes['body']) : '';
     }
 
-    /**
-     * Get the created_at date in a human-readable format like '1 hour ago', '2 days ago'.
-     * @return Attribute
-     */
     protected function createdAt(): Attribute
     {
         return Attribute::make(
@@ -53,11 +49,6 @@ class Draft extends Model
         );
     }
 
-
-    /**
-     * Get the updated_at date in a formatted way.
-     * @return Attribute
-     */
     protected function updatedAt(): Attribute
     {
         return Attribute::make(

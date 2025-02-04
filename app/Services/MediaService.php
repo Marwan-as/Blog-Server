@@ -3,19 +3,23 @@
 namespace App\Services;
 
 use App\Models\Post;
+use Illuminate\Database\Eloquent\Collection;
 
 class MediaService
 {
-    public function getMedia()
+    public function getMedia(): Collection
     {
-        return Post::with('user')
+        return Post::select(['id', 'title', 'imagePath', 'user_id'])
+            ->with(['user:id, name, email'])
             ->where('privacy', 'public')
             ->latest()
             ->get()
-            ->makeHidden(['user.password', 'user.remember_token'])
             ->transform(function ($post) {
-                return $post->only(['id', 'title', 'imagePath']) + [
-                    'user' => $post->user->only(['id', 'name', 'email'])
+                return [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'imagePath' => $post->imagePath,
+                    'user' => optional($post->user)->only(['id', 'name', 'email']),
                 ];
             });
     }

@@ -60,7 +60,7 @@ Route::controller(PostController::class)->group(function () {
     Route::get('/posts/{post}', 'getPost');
     Route::get('/posts/{post}/comments', 'getPostComments');
     Route::put('/posts/{post}', 'update');
-    Route::delete('/posts/{post}', 'delete');
+    Route::delete('/posts/{post}', 'destroy');
 });
 
 Route::controller(MediaController::class)->group(function () {
@@ -69,17 +69,19 @@ Route::controller(MediaController::class)->group(function () {
 
 Route::controller(CommentController::class)->group(function () {
     Route::post('/comments', 'store')->middleware('auth:sanctum');
-    Route::delete('/comments/{comment}', 'delete')->middleware('auth:sanctum');
+    Route::delete('/comments/{comment}', 'destroy')->middleware('auth:sanctum');
 });
 
 Route::controller(ReplyController::class)->group(function() {
     Route::post('/replies','store')->middleware('auth:sanctum');
+    Route::delete('/replies/{reply}','destroy')->middleware('auth:sanctum');
+
 });
 
 Route::controller(DraftController::class)->group(function () {
     Route::post('/drafts', 'store')->middleware('auth:sanctum');
     Route::put('/drafts/{draft}', 'update')->middleware('auth:sanctum');
-    Route::delete('/drafts/{draft}', 'delete')->middleware('auth:sanctum');
+    Route::delete('/drafts/{draft}', 'destroy')->middleware('auth:sanctum');
 });
 
 Route::prefix('/users')->controller(UserController::class)->group(function () {
@@ -97,7 +99,7 @@ Route::prefix('/users')->controller(UserController::class)->group(function () {
     Route::get('/{user}/drafts', 'getUserDrafts');
 
     Route::put('/{user}', 'update')->middleware('auth:sanctum');
-    Route::delete('/{user}', 'delete')->middleware('auth:sanctum');
+    Route::delete('/{user}', 'destroy')->middleware('auth:sanctum');
 });
 
 

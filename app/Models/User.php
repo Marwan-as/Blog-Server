@@ -92,10 +92,6 @@ class User extends Authenticatable
             : '';
     }
 
-    /**
-     * Get the created_at date in a human-readable format like '1 hour ago', '2 days ago'.
-     * @return Attribute
-     */
     protected function createdAt(): Attribute
     {
         return Attribute::make(
@@ -103,11 +99,6 @@ class User extends Authenticatable
         );
     }
 
-
-    /**
-     * Get the updated_at date in a formatted way.
-     * @return Attribute
-     */
     protected function updatedAt(): Attribute
     {
         return Attribute::make(

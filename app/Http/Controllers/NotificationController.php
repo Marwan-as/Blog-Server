@@ -10,6 +10,7 @@ class NotificationController extends Controller
     public function getUnreadNotifications(Request $request)
     {
         $user = $request->user();
+
         return response()->json(['notifications' => $user->unreadNotifications], 200);
     }
 
@@ -17,6 +18,7 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, $id)
     {
         $user = $request->user();
+
         $notification = $user->notifications()->find($id);
 
         if ($notification) {
@@ -31,7 +33,9 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         $user = $request->user();
+
         $user->unreadNotifications->markAsRead();
+
         return response()->json(['message' => 'All notifications marked as read'], 200);
     }
 
@@ -39,6 +43,7 @@ class NotificationController extends Controller
     public function getAllNotifications(Request $request)
     {
         $user = $request->user();
+
         return response()->json(['notifications' => $user->notifications], 200);
     }
 }

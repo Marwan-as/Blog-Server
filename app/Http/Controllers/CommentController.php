@@ -2,44 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Comment\StoreCommentRequest;
 use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\CommentNotification;
+use App\Services\CommentService;
 
 class CommentController extends Controller
 {
-    public function store(Request $request)
+    private $commentService;
+
+    public function __construct(CommentService $commentService)
     {
-        $data = $request->validate([
-            'body' => 'required|max:255',
-            'post_id' => 'required|exists:posts,id'
-        ]);
+        $this->commentService = $commentService;
+    }
 
-        $user = $request->user();
-        $data['user_id'] = $user->id;
+    public function store(StoreCommentRequest $request)
+    {
 
-        $comment = DB::transaction(function () use ($data) {
-            return Comment::create($data);
-        });
+        $comment =  $this->commentService->createComment($request);
 
         if (!$comment) {
             return response()->json(['message' => 'Failed to add comment!'], 500);
         }
 
-
-        $postOwner = $comment->post->user;
-        if ($postOwner->id !== $user->id) {
-            $postOwner->notify(new CommentNotification($comment, $user));
-        }
-
         return response()->json(['message' => 'Comment Added!', 'comment' => $comment], 200);
     }
 
-    public function delete(Comment $comment)
+    public function destroy(Comment $comment)
     {
-        $deleted = $comment->delete();
+        $deleted = $this->commentService->deleteComment($comment);
+        
         if (!$deleted) {
             return response()->json(['message' => 'Failed to delete comment.', 500]);
         }
