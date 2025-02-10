@@ -21,7 +21,7 @@ class Post extends Model
         'user_id'
     ];
 
-    protected $appends = ['imagePath', 'title', 'body'];
+    protected $appends = ['imagePath', 'publishedAt'];
 
     public function getImagePathAttribute()
     {
@@ -30,25 +30,19 @@ class Post extends Model
             : '';
     }
 
-    public function getTitleAttribute()
+
+    protected function title(): Attribute
     {
-        return ucfirst($this->attributes['title']);
+        return Attribute::make(
+            get: fn(string $value) => ucfirst($value),
+        );
     }
 
-    public function getBodyAttribute()
+    protected function body(): Attribute
     {
-        return ucfirst($this->attributes['body']);
-    }
-
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function comments(): HasMany
-    {
-        return $this->hasMany(Comment::class);
+        return Attribute::make(
+            get: fn(string $value) => ucfirst($value),
+        );
     }
 
     protected function createdAt(): Attribute
@@ -63,5 +57,28 @@ class Post extends Model
         return Attribute::make(
             get: fn(string $value) => Carbon::parse($value)->diffForHumans(),
         );
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function getPublishedAtAttribute()
+    {
+        if (!$this->created_at) {
+            return null;
+        }
+
+        if ($this->updated_at && $this->updated_at >= $this->created_at) {
+            return Carbon::parse($this->updated_at)->diffForHumans();
+        }
+
+        return Carbon::parse($this->created_at)->diffForHumans();
     }
 }

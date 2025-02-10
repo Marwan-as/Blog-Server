@@ -23,7 +23,7 @@ class Draft extends Model
         return $this->belongsTo(User::class);
     }
 
-    protected $appends = ['imagePath', 'title', 'body'];
+    protected $appends = ['imagePath', 'savedAt'];
 
     public function getImagePathAttribute()
     {
@@ -32,15 +32,20 @@ class Draft extends Model
             : '';
     }
 
-    public function getTitleAttribute()
+    protected function title(): Attribute
     {
-        return isset($this->attributes['title']) && $this->attributes['title'] ? ucfirst($this->attributes['title']) : '';
+        return Attribute::make(
+            get: fn(string $value) => ucfirst($value),
+        );
     }
 
-    public function getBodyAttribute()
+    protected function body(): Attribute
     {
-        return isset($this->attributes['body']) && $this->attributes['body'] ? ucfirst($this->attributes['body']) : '';
+        return Attribute::make(
+            get: fn(string | null $value) => $value ? ucfirst($value) : null,
+        );
     }
+
 
     protected function createdAt(): Attribute
     {
@@ -54,5 +59,18 @@ class Draft extends Model
         return Attribute::make(
             get: fn(string $value) => Carbon::parse($value)->diffForHumans(),
         );
+    }
+
+    public function getSavedAtAttribute()
+    {
+        if (!$this->created_at) {
+            return null;
+        }
+
+        if ($this->updated_at && $this->updated_at >= $this->created_at) {
+            return Carbon::parse($this->updated_at)->format('Y-m-d');
+        }
+
+        return Carbon::parse($this->created_at)->format('Y-m-d');
     }
 }

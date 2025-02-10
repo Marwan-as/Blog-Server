@@ -24,7 +24,7 @@ class DraftService
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $path = $this->storeFile($image, 'uploads/drafts', 'public');
+            $path = $this->storeFile($image, 'uploads/media', 'public');
             $data['imagePath'] = $path;
         }
 
@@ -44,7 +44,7 @@ class DraftService
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $relativePath = FileHelper::getRelativeFilePath($draft->imagePath);
-            $data['imagePath'] = $this->storeFile($image, 'uploads/drafts', 'public', $relativePath);
+            $data['imagePath'] = $this->storeFile($image, 'uploads/media', 'public', $relativePath);
         }
 
         $updated = DB::transaction(fn() => $draft->update($data));

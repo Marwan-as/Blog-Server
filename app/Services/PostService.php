@@ -12,7 +12,7 @@ use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
-
+use Illuminate\Support\Facades\Log;
 
 class PostService
 {
@@ -30,15 +30,58 @@ class PostService
 
     public function createPost(StorePostRequest $request): ?Post
     {
+        Log::info('request', [$request->all()]);
         $data = $request->validated();
         $data['user_id'] = $request->user()->id;
 
+        $imageStatus = $request->imageStatus;
 
-        if ($request->imageStatus && $request->draftId) {
+        if ($imageStatus && $request->draftId) {
             $draft = Draft::find($request->draftId);
-            $data['imagePath'] = $this->handleImageForDraft($request, $draft);
-        } elseif ($request->hasFile('image')) {
-            $data['imagePath'] = $this->storeFile($request->file('image'), 'uploads/posts', 'public');
+
+            if ($draft) {
+                switch ($imageStatus) {
+                    case "removed":
+                        if ($draft->imagePath) {
+                            $relativePath_draft = FileHelper::getRelativeFilePath($draft->imagePath);
+                            $this->deleteFile($relativePath_draft, 'public');
+                            $draft->delete();
+                        }
+
+                        break;
+
+                    case "noChange":
+                        if ($draft->imagePath) {
+                            $data['imagePath'] = $draft->imagePath;
+                            $draft->delete();
+                        }
+
+                        break;
+
+                    case "changed":
+                        if ($request->hasFile('image') && $draft->imagePath) {
+                            $image = $request->file('image');
+                            $path = $this->storeFile($image, 'uploads/media', 'public');
+                            $data['imagePath'] = $path;
+                            $draft->delete();
+                        }
+                        break;
+
+                    case "added":
+                        if ($request->hasFile('image')) {
+                            $image = $request->file('image');
+                            $path = $this->storeFile($image, 'uploads/media', 'public');
+                            $data['imagePath'] = $path;
+                            $draft->delete();
+                        }
+
+                        break;
+                }
+            }
+        } else if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $path = $this->storeFile($image, 'uploads/media', 'public');
+            $data['imagePath'] = $path;
         }
 
         $data['privacy'] = $data['privacy'] === 'undefined' ? 'public' : $data['privacy'];
@@ -58,7 +101,7 @@ class PostService
 
         if ($request->hasFile('image')) {
             $relativePath = FileHelper::getRelativeFilePath($post->imagePath);
-            $data['imagePath'] = $this->storeFile($request->file('image'), 'uploads/posts', 'public', $relativePath);
+            $data['imagePath'] = $this->storeFile($request->file('image'), 'uploads/media', 'public', $relativePath);
         }
 
         DB::transaction(fn() => $post->update($data));
@@ -80,33 +123,5 @@ class PostService
         }
 
         return $post->delete();
-    }
-
-    private function handleImageForDraft(StorePostRequest $request, ?Draft $draft): ?string
-    {
-        if (!$draft) {
-            return null;
-        }
-
-        switch ($request->imageStatus) {
-            case "removed":
-                if ($draft->imagePath) {
-                    $this->deleteFile(FileHelper::getRelativeFilePath($draft->imagePath), 'public');
-                }
-                return null;
-
-            case "noChange":
-                return $draft->imagePath
-                    ? $this->moveFile(FileHelper::getRelativeFilePath($draft->imagePath), 'uploads/posts', 'public')
-                    : null;
-
-            case "changed":
-            case "added":
-                return $request->hasFile('image')
-                    ? $this->storeFile($request->file('image'), 'uploads/posts', 'public')
-                    : null;
-        }
-
-        return null;
     }
 }

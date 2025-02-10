@@ -76,7 +76,7 @@ class User extends Authenticatable
     }
 
 
-    protected  $appends = ['profileImagePath', 'coverImagePath'];
+    protected  $appends = ['profileImagePath', 'coverImagePath', 'joinedAt'];
 
     public function getProfileImagePathAttribute()
     {
@@ -90,6 +90,11 @@ class User extends Authenticatable
         return isset($this->attributes['coverImagePath']) && $this->attributes['coverImagePath']
             ? asset('storage/' . $this->attributes['coverImagePath'])
             : '';
+    }
+
+    public function getJoinedAtAttribute()
+    {
+        return $this->created_at ? Carbon::parse($this->created_at)->diffForHumans() : null;
     }
 
     protected function createdAt(): Attribute

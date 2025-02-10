@@ -5,6 +5,7 @@ namespace App\Traits;
 use Exception;
 use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 trait FileServiceTrait
@@ -14,32 +15,6 @@ trait FileServiceTrait
         return Storage::disk($disk)->exists($path);
     }
 
-    protected function moveFile(string $currentPath, string $newPath, string $disk)
-    {
-        if (!$currentPath) {
-            throw new InvalidArgumentException('Current path is not provided.', 400);
-        }
-
-        if (!$newPath) {
-            throw new InvalidArgumentException('New path is not provided.', 400);
-        }
-
-        if (!$disk) {
-            throw new InvalidArgumentException('Disk is not provided.', 400);
-        }
-
-        if (!$this->fileExists($disk, $currentPath)) {
-            throw new Exception('The file at the current path does not exist.', 404);
-        }
-
-        $moved = Storage::disk($disk)->move($currentPath, $newPath);
-
-        if (!$moved) {
-            return false;
-        }
-
-        return $newPath;
-    }
 
     protected function deleteFile(string $path, string $disk)
     {
@@ -58,6 +33,33 @@ trait FileServiceTrait
 
         return Storage::disk($disk)->delete($path);
     }
+
+    protected function moveFile(string $currentPath, string $newPath, string $disk)
+    {
+        if (!$currentPath) {
+            throw new InvalidArgumentException('Current path is not provided.', 400);
+        }
+
+        if (!$newPath) {
+            throw new InvalidArgumentException('New path is not provided.', 400);
+        }
+
+        if (!$disk) {
+            throw new InvalidArgumentException('Disk is not provided.', 400);
+        }
+
+
+        if (!$this->fileExists($disk, $currentPath)) {
+            throw new Exception('The file at the current path does not exist.', 404);
+        }
+
+        Storage::disk($disk)->move($currentPath, $newPath);
+
+        // $this->deleteFile($currentPath, 'public');
+
+        return $newPath;
+    }
+
 
     protected function storeFile(UploadedFile $file, string $directory, string $disk, string|null $path = null): string|false
     {
@@ -80,8 +82,13 @@ trait FileServiceTrait
         return $file->store($directory, $disk);
     }
 
-    protected function getRelativeFilePath($path)
+    protected function getRelativeFilePath(string $path)
     {
         return str_replace('http://localhost:8000/storage/', '', $path);
+    }
+
+    protected function getFileNameFromPath(string $path)
+    {
+        return basename($path);
     }
 }

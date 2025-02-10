@@ -57,6 +57,6 @@ class AuthService
 
         $token = $user->createToken('ACCESS_TOKEN' . $user->id);
 
-        return [$token, $user];
+        return ['token' => $token, 'user' => $user];
     }
 }

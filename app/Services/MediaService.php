@@ -9,9 +9,7 @@ class MediaService
 {
     public function getMedia(): Collection
     {
-        return Post::select(['id', 'title', 'imagePath', 'user_id'])
-            ->with(['user:id, name, email'])
-            ->where('privacy', 'public')
+        return Post::where('privacy', 'public')
             ->latest()
             ->get()
             ->transform(function ($post) {
@@ -19,6 +17,7 @@ class MediaService
                     'id' => $post->id,
                     'title' => $post->title,
                     'imagePath' => $post->imagePath,
+                    'publishedAt' => $post->published_at,
                     'user' => optional($post->user)->only(['id', 'name', 'email']),
                 ];
             });
